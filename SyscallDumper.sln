@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29728.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SyscallDumper", "SyscallDumper\SyscallDumper.vcxproj", "{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SyscallXtract", "SyscallXtract\SyscallXtract.pyproj", "{D7D70056-3F81-4662-8F2A-50A7A126EB49}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Debug|x64.ActiveCfg = Debug|x64
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Debug|x64.Build.0 = Debug|x64
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Debug|x86.ActiveCfg = Debug|Win32
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Debug|x86.Build.0 = Debug|Win32
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Release|Any CPU.ActiveCfg = Release|Win32
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Release|x64.ActiveCfg = Release|x64
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Release|x64.Build.0 = Release|x64
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Release|x86.ActiveCfg = Release|Win32
+		{DA59CE9F-C50A-47B1-A1B1-FA5C7979E98A}.Release|x86.Build.0 = Release|Win32
+		{D7D70056-3F81-4662-8F2A-50A7A126EB49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7D70056-3F81-4662-8F2A-50A7A126EB49}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D7D70056-3F81-4662-8F2A-50A7A126EB49}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D7D70056-3F81-4662-8F2A-50A7A126EB49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7D70056-3F81-4662-8F2A-50A7A126EB49}.Release|x64.ActiveCfg = Release|Any CPU
+		{D7D70056-3F81-4662-8F2A-50A7A126EB49}.Release|x86.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3B3C424C-B555-4007-97A4-12987A887F00}
+	EndGlobalSection
+EndGlobal
