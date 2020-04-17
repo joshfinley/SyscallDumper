@@ -69,7 +69,7 @@ if (!ntdll) {
 }
 ```
 
-Without the`LOAD_LIBRARY_AS_DATAFILE` flag, `DllMain` would be called upon loading. In this siutation, this needs to be avoidied, and by using this flag, the library to simply be loaded as raw data.
+Without the`LOAD_LIBRARY_AS_DATAFILE` flag, `DllMain` would be called upon loading. In this situation, this needs to be avoided, and by using this flag, the library to simply be loaded as raw data.
 
 With the raw data of `ntdll.dll` available, it can be parsed for exports:
 
