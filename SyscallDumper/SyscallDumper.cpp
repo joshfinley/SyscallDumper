@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     DWORD status;
 
     // load ntdll
-    HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE);
+    HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
     if (!ntdll) {
         status = GetLastError();
         std::cout << "Error: " << status;
