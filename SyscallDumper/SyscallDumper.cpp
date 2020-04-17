@@ -11,6 +11,7 @@
 // References:
 //  https://resources.infosecinstitute.com/the-export-directory/
 //  http://www.rohitab.com/discuss/topic/40594-parsing-pe-export-table/
+//  https://j00ru.vexillium.org/syscalls/nt/64/
 
 // Examples:
 //  https://stackoverflow.com/questions/1128150/win32-api-to-enumerate-dll-export-functions
@@ -21,79 +22,76 @@
 #include <assert.h>
 
 #include <vector>
+#include <iomanip>
 
 // local includes
-#include "json.hpp"
-
-// prototypes
-void usage();
-void printSyscall(std::string syscallname, uint64_t syscalloffset);
-
-
+#include "syscalls.hpp"
 
 int main(int argc, char *argv[])
 {
     // set file name
-    HMODULE ntdll = LoadLibraryEx(L"./ntdll.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
+    HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
     if (!ntdll) {
-        printf("Error: %d", GetLastError());
+        std::cout << "Error: " << GetLastError();
         return ERROR_FUNCTION_FAILED;
     }
 
+    // extract the dos header
     auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll);
     assert(dosHeader->e_magic == IMAGE_DOS_SIGNATURE);
 
+    // extract the nt header
     auto ntHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(
         reinterpret_cast<BYTE*>(ntdll) + reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll)->e_lfanew);
 
+    // extract the export directory
     auto exports = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>((BYTE*)ntdll + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
     assert(exports->AddressOfNames != 0);
 
+    // set variables for export directory members
     auto addr = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfFunctions));
     auto name = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNames));
     auto ord = reinterpret_cast<PWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNameOrdinals));
 
-    using json = nlohmann::json;
+    // print column headers
+    std::cout << std::left
+        << std::setw(10) << "ordinal"
+        << std::setw(10) << "RVA"
+        << std::setw(10) << "code"
+        << "name\n" << std::endl;
 
-    json syscalldump;
-
+    // loop over exports
     for (uint64_t i = 0; i < exports->AddressOfFunctions; i++) {
-        std::string funcname;
-        try {
-            // break on access violation
-            funcname = (char*)ntdll + name[i];
-        }
-        catch (...) {
-            std::cout << "end of exports" << std::endl;
-            break;
-        }
-        
-        if (funcname.rfind("Nt", 0) == 0) {
-            PVOID funcaddr = reinterpret_cast<PVOID>(
-                reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+        std::string funcname = (char*)ntdll + name[i];
 
-            if (!funcaddr)
+        // identify "Nt" family functions
+        if (funcname.rfind("Nt", 0) == 0) {
+            try {
+                // get the pointer to the function and calculate its RVA
+                PVOID funcaddr = reinterpret_cast<PVOID>(
+                    reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+                auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
+
+                if (!isSyscall(funcname))
+                    continue;
+
+                // retrieve the syscall code number from the address
+                auto objectcode = *(uintptr_t*)funcaddr;
+                auto syscallcode = (objectcode >> 8 * 4) & 0xfff;
+                               
+                // print the function's information
+                std::cout << std::left
+                    << std::setw(10) << std::dec << i
+                    << std::setw(10) << std::hex << rva
+                    << std::setw(10) << std::hex << syscallcode
+                    << funcname << std::endl;
+            }
+            catch (char *e) {
+                std::cout << "Exception: " << e << std::endl;
                 continue;
-            auto offset = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
-            syscalldump.emplace(funcname, (uint64_t)funcaddr);
-            std::cout << "syscall: " << funcname << "offset: " << std::hex << offset << std::endl;
+            }
         }
     }
 
-
     return 0;
-}
-
-void printSyscall(std::string syscallname, uint64_t syscalloffset) {
-    std::cout << "syscall: " << syscallname << "offset: " << syscalloffset << std::endl;
-    std::cout.flush();
-}
-
-void usage()
-{
-    const char* banner =
-        "\nUsage: SycallDumper.exe           \n"
-        "\tntdll must be in the current dir\n\n";
-
-    printf(banner);
 }

@@ -20,7 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="json.hpp">
+    <ClInclude Include="syscalls.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
