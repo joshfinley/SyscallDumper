@@ -12,9 +12,9 @@
 //  https://resources.infosecinstitute.com/the-export-directory/
 //  http://www.rohitab.com/discuss/topic/40594-parsing-pe-export-table/
 //  https://j00ru.vexillium.org/syscalls/nt/64/
-
-// Examples:
+//  https://www.geoffchappell.com/studies/windows/win32/ntdll/index.htm
 //  https://stackoverflow.com/questions/1128150/win32-api-to-enumerate-dll-export-functions
+
 ===================================================================+*/
 
 #include <windows.h>
