@@ -6,7 +6,7 @@ This is an implementation of a simple (less than 100 lines) C++ program which du
 
 `ntdll.dll` is the interface through which user-mode applications access the Windows kernel. `ntdll.dll` exports functions for every fundamental activity requring access to the domain of the kernel. Examples include interacting with the filesystem, virtual memory, physical devices, and more.
 
-These functions are are esentially thin wrappers for passing information to the kernel for execution. With each syscall, `ntddl.dll` sets up the information that the kernel needs, including placing the relevant _number_ of the system call into register `eax`. Following this, control is diverted to the kernel using the `syscall` instruction. A more complete description of this function can be found [here](https://www.felixcloutier.com/x86/syscall).
+These functions are are esentially thin wrappers for passing information to the kernel for execution. With each syscall, `ntddl.dll` sets up the information that the kernel needs, including placing the relevant _number_ of the system call into register `eax`. Following this, control is diverted to the kernel using the `syscall` instruction. A more complete description of this instruction can be found [here](https://www.felixcloutier.com/x86/syscall).
 
 The following image shows an example of the disassembly of an `ntdll.dll` sytem call export:
 
