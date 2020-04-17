@@ -57,4 +57,89 @@ For almost any legitimate, day-to-day activities, a programmer will not interact
 
 ## Extracting System Call Numbers From `ntdll.dl`
 
-`ntdll.dll
+Extracting the system calls from `ntdll.dll` is more an exercise in manual mapping than anything else. First, `ntdll.dll` is loaded with the `LOAD_LIBRARY_AS_DATAFILE` flag:
+
+```c++
+// load ntdll
+HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
+if (!ntdll) {
+    status = GetLastError();
+    std::cout << "Error: " << status;
+    return status;
+}
+```
+
+The `LOAD_LIBRARY_AS_DATAFILE` flag is used to prevent the calling of `DllMain` upon loading. Using the flag causes the library to simply be loaded as data and nothing else.
+
+With the raw data of `ntdll.dll` available, it can be parsed for exports:
+
+```c++
+// extract the dos header
+auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll);
+
+// extract the nt header
+auto ntHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(
+    reinterpret_cast<BYTE*>(ntdll) + reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll)->e_lfanew);
+
+// extract the export directory
+auto exports = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>((BYTE*)ntdll + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+
+// set variables for export directory members
+auto addr = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfFunctions));
+auto name = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNames));
+auto ord = reinterpret_cast<PWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNameOrdinals));
+```
+
+From here, the exports can simply be looped over to:
+- find functions with names matching system calls
+- extract the system call number:
+
+```c++
+// loop over exports
+for (uint64_t i = 0; i < exports->AddressOfFunctions; i++) {
+    std::string funcname = (char*)ntdll + name[i];
+
+    // identify "Nt" family functions
+    if (funcname.rfind("Nt", 0) == 0) {
+        try {
+            // get the pointer to the function and calculate its RVA
+            PVOID funcaddr = reinterpret_cast<PVOID>(
+                reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+            auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
+
+            if (!isSyscall(funcname))
+                continue;
+
+            // retrieve the syscall code number from the address
+            auto objectcode = *(uintptr_t*)funcaddr;
+            auto syscallcode = (objectcode >> 8 * 4) & 0xfff;
+                            
+            // print the function's information
+            std::cout << std::left
+                << std::setw(10) << std::dec << i
+                << std::setw(10) << std::hex << rva
+                << std::setw(10) << std::hex << syscallcode
+                << funcname << std::endl;
+        }
+        catch (char *e) {
+            std::cout << "Exception: " << e << std::endl;
+            continue;
+        }
+    }
+}
+```
+
+The result is a program which will enumerate the system calls of `ntdll.dll`
+
+```
+C:\>SyscallDumper.exe
+ordinal   RVA       code      name
+
+190       9c0a0     2         NtAcceptConnectPort
+191       9c060     0         NtAccessCheck
+192       9c580     29        NtAccessCheckAndAuditAlarm
+... (truncated)
+653       9cb40     57        NtWriteRequestData
+654       9c7a0     3a        NtWriteVirtualMemory
+655       9c920     46        NtYieldExecution
+```
