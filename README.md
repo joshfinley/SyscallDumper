@@ -6,13 +6,13 @@ This is an implementation of a simple (less than 100 lines) C++ program which du
 
 `ntdll.dll` is the interface through which user-mode applications access the Windows kernel. `ntdll.dll` exports functions for every fundamental activity requring access to the domain of the kernel. Examples include interacting with the filesystem, virtual memory, physical devices, and more.
 
-These functions are are esentially thin wrappers for passing information to the kernel for execution. With each syscall, `ntddl.dll` sets up the information that the kernel needs, including placing the relevant _number_ of the system call into register `eax`. Following this, control is diverted to the kernel using the `syscall` instruction. A more complete descriptin of this function can be found [here](https://www.felixcloutier.com/x86/syscall).
+These functions are are esentially thin wrappers for passing information to the kernel for execution. With each syscall, `ntddl.dll` sets up the information that the kernel needs, including placing the relevant _number_ of the system call into register `eax`. Following this, control is diverted to the kernel using the `syscall` instruction. A more complete description of this function can be found [here](https://www.felixcloutier.com/x86/syscall).
 
-The following image shows an example of the disassembly of a Windows sytem call:
+The following image shows an example of the disassembly of an `ntdll.dll` sytem call export:
 
 ![resourcse system call disasm](resources/ntdll_syscall_wrapper.png)
 
-`ntdll.dll` itself exports over 2000 functions. On Windows 1909, 464 of `system calls`. The exports of a given executable can quickly be dumped using `dumpbin.exe` as follows:
+`ntdll.dll` itself exports over 2000 functions. On Windows 1909, 464 of these are these system call wrappers. The exports of a given executable can quickly be dumped using `dumpbin.exe` as follows:
 
 ```
 C:\>dumpbin /exports C:\Windows\System32\ntdll.dll
@@ -69,7 +69,7 @@ if (!ntdll) {
 }
 ```
 
-The `LOAD_LIBRARY_AS_DATAFILE` flag is used to prevent the calling of `DllMain` upon loading. Using the flag causes the library to simply be loaded as data and nothing else.
+Without the`LOAD_LIBRARY_AS_DATAFILE` flag, `DllMain` would be called upon loading. In this siutation, this needs to be avoidied, and by using this flag, the library to simply be loaded as raw data.
 
 With the raw data of `ntdll.dll` available, it can be parsed for exports:
 
