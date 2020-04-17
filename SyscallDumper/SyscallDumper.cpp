@@ -29,11 +29,14 @@
 
 int main(int argc, char *argv[])
 {
-    // set file name
-    HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, DONT_RESOLVE_DLL_REFERENCES);
+    DWORD status;
+
+    // load ntdll
+    HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE);
     if (!ntdll) {
-        std::cout << "Error: " << GetLastError();
-        return ERROR_FUNCTION_FAILED;
+        status = GetLastError();
+        std::cout << "Error: " << status;
+        return status;
     }
 
     // extract the dos header
@@ -93,5 +96,5 @@ int main(int argc, char *argv[])
         }
     }
 
-    return 0;
+    return ERROR_SUCCESS;
 }
