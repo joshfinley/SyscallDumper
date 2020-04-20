@@ -20,6 +20,7 @@
 #include <windows.h>
 #include <iostream>
 #include <assert.h>
+#include <intrin.h>
 
 #include <vector>
 #include <iomanip>
@@ -60,7 +61,8 @@ int main(int argc, char *argv[])
     std::cout << std::left
         << std::setw(10) << "ordinal"
         << std::setw(10) << "RVA"
-        << std::setw(10) << "code"
+        << std::setw(10) << "mumber"
+        << std::setw(15) << "bytes"
         << "name\n" << std::endl;
 
     // loop over exports
@@ -87,6 +89,7 @@ int main(int argc, char *argv[])
                     << std::setw(10) << std::dec << i
                     << std::setw(10) << std::hex << rva
                     << std::setw(10) << std::hex << syscallcode
+                    << std::setw(15) << std::hex << _byteswap_ulong(objectcode)
                     << funcname << std::endl;
             }
             catch (char *e) {
