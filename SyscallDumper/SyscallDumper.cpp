@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     std::cout << std::left
         << std::setw(10) << "ordinal"
         << std::setw(10) << "RVA"
-        << std::setw(10) << "mumber"
+        << std::setw(10) << "number"
         << std::setw(15) << "bytes"
         << "name\n" << std::endl;
 
