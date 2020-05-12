@@ -3,6 +3,9 @@
 #include <windows.h>
 #include <iostream>
 #include <vector>
+
+#define MAX_SYSCALL_ORD 655
+
 BOOL isSyscall(std::string functionName) {
     std::vector<std::string> syscalls{
     "NtAcceptConnectPort",
@@ -491,12 +494,6 @@ BOOL isSyscall(std::string functionName) {
     if (std::find(syscalls.begin(), syscalls.end(), functionName) != syscalls.end()) {
         return TRUE;
     }
-    /*for (std::vector<std::string>::iterator it = syscalls.begin();
-        it != syscalls.end();
-        ++ it) 
-    {
-        if (std::find())
-    }*/
 
     return FALSE;
 }
