@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 
     // loop over exports
-    for (uint64_t i = 0; i < exports->NumberOfFunctions && i <= MAX_SYSCALL_ORD; i++) {
+    for (uint64_t i = 0; i < exports->NumberOfFunctions; i++) {
         std::string funcname = (char*)ntdll + name[i];
 
         // get the pointer to the function
