@@ -100,30 +100,15 @@ for (uint64_t i = 0; i < exports->AddressOfFunctions; i++) {
     std::string funcname = (char*)ntdll + name[i];
 
     // identify "Nt" family functions
-    if (funcname.rfind("Nt", 0) == 0) {
-        try {
-            // get the pointer to the function and calculate its RVA
-            PVOID funcaddr = reinterpret_cast<PVOID>(
-                reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
-            auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
+    if (isSyscall(funcname)) {
+        // get the pointer to the function and calculate its RVA
+        PVOID funcaddr = reinterpret_cast<PVOID>(
+            reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+        auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
 
-            if (!isSyscall(funcname))
-                continue;
-
-            // retrieve the syscall code number from the address
-            auto objectcode = *(uintptr_t*)funcaddr;
-            auto syscallcode = (objectcode >> 8 * 4) & 0xfff;
-                            
-            // print the function's information
-            std::cout << std::left
-                << std::setw(10) << std::dec << i
-                << std::setw(10) << std::hex << rva
-                << std::setw(10) << std::hex << syscallcode
-                << funcname << std::endl;
-        }
-        catch (char *e) {
-            std::cout << "Exception: " << e << std::endl;
-            continue;
+        // retrieve the syscall code number from the address
+        auto objectcode = *(uintptr_t*)funcaddr;
+        auto syscallcode = (objectcode >> 8 * 4) & 0xfff;             
         }
     }
 }
