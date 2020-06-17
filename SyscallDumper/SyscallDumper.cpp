@@ -66,20 +66,18 @@ int main(int argc, char *argv[])
         << std::setw(15) << "bytes"
         << "name\n" << std::endl;
 
-    // prepare output asm
-    std::ofstream syscalls_asm;
-    syscalls_asm.open("Syscalls.asm", std::ofstream::trunc);
-    syscalls_asm << ".code\n\n" << std::endl;
 
     // loop over exports
-    for (uint64_t i = 0; i < exports->AddressOfFunctions && i <= MAX_SYSCALL_ORD; i++) {
+    for (uint64_t i = 0; i < exports->NumberOfFunctions && i <= MAX_SYSCALL_ORD; i++) {
         std::string funcname = (char*)ntdll + name[i];
 
+        // get the pointer to the function
+        PVOID funcaddr = reinterpret_cast<PVOID>(
+            reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+
         // identify "Nt" family functions
-        if (isSyscall(funcname)) {
-            // get the pointer to the function and calculate its RVA
-            PVOID funcaddr = reinterpret_cast<PVOID>(
-                reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+        if (isSyscall(funcaddr)) {
+            //  calculate its RVA
             auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
 
             // retrieve the syscall code number from the address
@@ -92,20 +90,9 @@ int main(int argc, char *argv[])
                 << std::setw(10) << std::hex << rva
                 << std::setw(10) << std::hex << syscallcode
                 << std::setw(15) << std::hex << _byteswap_ulong(objectcode)
-                << funcname << std::endl;
-
-            // write the function to asm
-            syscalls_asm << funcname << " proc\n"
-                << "\t\t\tmov r10, rcx\n"
-                << "\t\t\tmov eax, " << syscallcode << "\n"
-                << "\t\t\tsyscall\n"
-                << "\t\t\tret\n" 
-                << funcname << " endp\n" << std::endl;        
+                << funcname << std::endl;   
         }
     }
 
-    syscalls_asm << "end" << std::endl;
-    syscalls_asm.close();
     return ERROR_SUCCESS;
 }
-
