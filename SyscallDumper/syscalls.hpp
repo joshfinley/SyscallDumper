@@ -1,7 +1,6 @@
 #pragma once
 
 #include <windows.h>
-#include <iostream>
 
 BOOL isSyscall(LPCVOID pFunction) {
     LPCBYTE lpBytePtr = (LPCBYTE)pFunction;
