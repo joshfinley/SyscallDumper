@@ -2,7 +2,6 @@
 
 #include <windows.h>
 #include <iostream>
-#include <vector>
 
 BOOL isSyscall(LPCVOID pFunction) {
     LPCBYTE lpBytePtr = (LPCBYTE)pFunction;
