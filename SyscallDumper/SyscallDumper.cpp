@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
     // loop over exports
     for (uint64_t i = 0; i < exports->NumberOfFunctions; i++) {
-        std::string funcname = (char*)ntdll + name[i];
+        
 
         // get the pointer to the function
         PVOID funcaddr = reinterpret_cast<PVOID>(
@@ -77,7 +77,11 @@ int main(int argc, char *argv[])
 
         // identify "Nt" family functions
         if (isSyscall(funcaddr)) {
-            //  calculate its RVA
+            // continue if not Zw
+            std::string funcname = (char*)ntdll + name[i];
+            if (!strncmp(funcname.c_str(), (char*)"Zw", 2)) continue;
+
+            // calculate its RVA
             auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
 
             // retrieve the syscall code number from the address
