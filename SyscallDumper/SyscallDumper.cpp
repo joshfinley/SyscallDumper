@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         if (isSyscall(funcaddr)) {
             // continue if not Zw
             std::string funcname = (char*)ntdll + name[i];
-            if (!strncmp(funcname.c_str(), (char*)"Zw", 2)) continue;
+            if (strncmp(funcname.c_str(), (char*)"Nt", 2)) continue;
 
             // calculate its RVA
             auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
