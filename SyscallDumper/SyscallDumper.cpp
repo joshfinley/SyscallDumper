@@ -19,11 +19,7 @@
 
 #include <windows.h>
 #include <iostream>
-#include <fstream>
 #include <assert.h>
-#include <intrin.h>
-
-#include <vector>
 #include <iomanip>
 
 // local includes
@@ -69,8 +65,6 @@ int main(int argc, char *argv[])
 
     // loop over exports
     for (uint64_t i = 0; i < exports->NumberOfFunctions; i++) {
-        
-
         // get the pointer to the function
         PVOID funcaddr = reinterpret_cast<PVOID>(
             reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
