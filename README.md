@@ -97,13 +97,13 @@ From here, the exports can simply be looped over to:
 ```c++
 // loop over exports
 for (uint64_t i = 0; i < exports->AddressOfFunctions; i++) {
-    std::string funcname = (char*)ntdll + name[i];
+    // get the pointer to the function
+    PVOID pFuncAddr = reinterpret_cast<PVOID>(
+            reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
 
     // identify "Nt" family functions
-    if (isSyscall(funcname)) {
-        // get the pointer to the function and calculate its RVA
-        PVOID funcaddr = reinterpret_cast<PVOID>(
-            reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+    if (isSyscall(pFuncAddr)) {
+        // calculate the function's RVA        
         auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
 
         // retrieve the syscall code number from the address
@@ -114,7 +114,7 @@ for (uint64_t i = 0; i < exports->AddressOfFunctions; i++) {
 }
 ```
 
-The result is a program which will enumerate the system calls of `ntdll.dll`
+The result is a program which will enumerate the system calls of `ntdll.dll`:
 
 ```
 C:\>SyscallDumper.exe
