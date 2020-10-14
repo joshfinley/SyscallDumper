@@ -3,10 +3,8 @@
   Summary:   Given an ntdll.dll file in the local directory, dump the
              names and RVAs of all exports
 
-  Classes:   Classes declared or used (in source files).
-  Functions: Functions exported (in source files).
-  Origin:    Inspired by tooling changes needed by introduction of 
-             Windows 1909.
+  Origin:    Inspired by information security research dependence on 
+             j00ru's Syscall Tables
 
 // References:
 //  https://resources.infosecinstitute.com/the-export-directory/
@@ -18,18 +16,20 @@
 ===================================================================+*/
 
 #include <windows.h>
-#include <iostream>
 #include <assert.h>
+#include <iostream>
+#include <memory>
 #include <iomanip>
 
-// local includes
-#include "syscalls.hpp"
+// Function Prototypes
+BOOL is_syscall(LPCVOID pFunction);
 
+// Entry Point
 int main(int argc, char *argv[])
 {
     DWORD status;
 
-    // load ntdll
+    // Load ntdll
     HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
     if (!ntdll) {
         status = GetLastError();
@@ -37,60 +37,69 @@ int main(int argc, char *argv[])
         return status;
     }
 
-    // extract the dos header
-    auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll);
-    assert(dosHeader->e_magic == IMAGE_DOS_SIGNATURE);
+    // Extract the dos header
+    auto dos_header = reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll);
+    assert(dos_header->e_magic == IMAGE_DOS_SIGNATURE);
 
-    // extract the nt header
+    // Extract the nt header
     auto ntHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(
         reinterpret_cast<BYTE*>(ntdll) + reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll)->e_lfanew);
 
-    // extract the export directory
+    // Extract the export directory
     auto exports = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>((BYTE*)ntdll + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
     assert(exports->AddressOfNames != 0);
 
-    // set variables for export directory members
+    // Set variables for export directory members
     auto addr = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfFunctions));
     auto name = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNames));
     auto ord = reinterpret_cast<PWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNameOrdinals));
 
-    // print column headers
+    // Print column headers
     std::cout << std::left
         << std::setw(10) << "ordinal"
         << std::setw(10) << "RVA"
         << std::setw(10) << "number"
-        << std::setw(15) << "bytes"
         << "name\n" << std::endl;
 
-
-    // loop over exports
+    // Loop over exports
     for (uint64_t i = 0; i < exports->NumberOfFunctions; i++) {
-        // get the pointer to the function
+        // Get the pointer to the function
         PVOID funcaddr = reinterpret_cast<PVOID>(
             reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
 
-        // identify "Nt" family functions
-        if (isSyscall(funcaddr)) {
-            // continue if not Zw
+        // Identify "Nt" family functions
+        if (is_syscall(funcaddr)) {
+            // Continue if not Zw
             std::string funcname = (char*)ntdll + name[i];
             if (strncmp(funcname.c_str(), (char*)"Nt", 2)) continue;
 
-            // calculate its RVA
+            // Calculate its RVA
             auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
 
-            // retrieve the syscall code number from the address
+            // Retrieve the syscall code number from the raw bytes
             auto objectcode = *(uintptr_t*)funcaddr;
             auto syscallcode = (objectcode >> 8 * 4) & 0xfff;
                                
-            // print the function's information
+            // Print the function's information
             std::cout << std::left
                 << std::setw(10) << std::dec << i
                 << std::setw(10) << std::hex << rva
                 << std::setw(10) << std::hex << syscallcode
-                << std::setw(15) << std::hex << _byteswap_ulong(objectcode)
                 << funcname << std::endl;   
         }
     }
 
     return ERROR_SUCCESS;
+}
+
+// Check the first four bytes of the function for operations indicating a syscall
+BOOL is_syscall(LPCVOID pFunction) {
+    LPCBYTE lpBytePtr = (LPCBYTE)pFunction;
+
+    if (lpBytePtr[0] == 0x4C &&
+        lpBytePtr[1] == 0x8B &&
+        lpBytePtr[2] == 0xD1 &&
+        lpBytePtr[3] == 0xB8) return TRUE;
+
+    return FALSE;
 }
