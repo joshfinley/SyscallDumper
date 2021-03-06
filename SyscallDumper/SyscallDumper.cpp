@@ -16,43 +16,50 @@
 ===================================================================+*/
 
 #include <windows.h>
-#include <assert.h>
 #include <iostream>
 #include <memory>
 #include <iomanip>
+#include <iostream>
+#include <filesystem>
+#include "raii.hpp"
 
-// Function Prototypes
-BOOL is_syscall(LPCVOID pFunction);
+namespace fs = std::filesystem;
 
-// Entry Point
-int main(int argc, char *argv[])
-{
-    DWORD status;
+/* Function Prototypes */
+BOOL IsSyscall(LPCVOID pFunction);
 
-    // Load ntdll
-    HMODULE ntdll = LoadLibraryEx(L"C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
-    if (!ntdll) {
-        status = GetLastError();
-        std::cout << "Error: " << status;
-        return status;
-    }
 
-    // Extract the dos header
-    auto dos_header = reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll);
-    assert(dos_header->e_magic == IMAGE_DOS_SIGNATURE);
+/* Entry Point */
+DWORD main() {
+    DWORD dwStatus;
 
-    // Extract the nt header
-    auto ntHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(
-        reinterpret_cast<BYTE*>(ntdll) + reinterpret_cast<PIMAGE_DOS_HEADER>(ntdll)->e_lfanew);
+    raii::Hmodule hDll = LoadLibraryExA(
+        "C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
+    if (!hDll.getHandle() || hDll.getHandle() == INVALID_HANDLE_VALUE)
+        return GetLastError();
 
-    // Extract the export directory
-    auto exports = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>((BYTE*)ntdll + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-    assert(exports->AddressOfNames != 0);
+    PBYTE pModuleBase = reinterpret_cast<PBYTE>(hDll.getHandle());
 
-    // Set variables for export directory members
-    auto addr = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfFunctions));
-    auto name = reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNames));
-    auto ord = reinterpret_cast<PWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->AddressOfNameOrdinals));
+    auto pDosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(pModuleBase);
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+        return ERROR_INVALID_EXE_SIGNATURE;
+
+    auto pNtHeader = reinterpret_cast<PIMAGE_NT_HEADERS>(
+        pModuleBase + pDosHeader->e_lfanew);
+    if (pNtHeader->Signature != IMAGE_NT_SIGNATURE)
+        return ERROR_INVALID_EXE_SIGNATURE;
+
+    auto pExportDir = reinterpret_cast<PIMAGE_EXPORT_DIRECTORY>(
+        pModuleBase + pNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+    if (pExportDir->NumberOfFunctions == 0)
+        ERROR_INVALID_DLL;
+
+    auto pdwAddressOfFunc = 
+        reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(pModuleBase) + pExportDir->AddressOfFunctions));
+    auto pdwAddressOfName = 
+        reinterpret_cast<PDWORD>((reinterpret_cast<LPBYTE>(pModuleBase) + pExportDir->AddressOfNames));
+    auto pwAddressOfOrd = 
+        reinterpret_cast<PWORD>((reinterpret_cast<LPBYTE>(pModuleBase) + pExportDir->AddressOfNameOrdinals));
 
     // Print column headers
     std::cout << std::left
@@ -61,39 +68,39 @@ int main(int argc, char *argv[])
         << std::setw(10) << "number"
         << "name\n" << std::endl;
 
-    // Loop over exports
-    for (uint64_t i = 0; i < exports->NumberOfFunctions; i++) {
+    for (uint64_t i = 0; i < pExportDir->NumberOfFunctions; i++) {
         // Get the pointer to the function
-        PVOID funcaddr = reinterpret_cast<PVOID>(
-            reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
-
+        PVOID pCurrentFunction = reinterpret_cast<PVOID>(
+            pModuleBase + pdwAddressOfFunc[pwAddressOfOrd[i]]);
+            
         // Identify "Nt" family functions
-        if (is_syscall(funcaddr)) {
-            // Continue if not Zw
-            std::string funcname = (char*)ntdll + name[i];
-            if (strncmp(funcname.c_str(), (char*)"Nt", 2)) continue;
-
+        if (IsSyscall(pCurrentFunction)) {           
             // Calculate its RVA
-            auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
-
+            auto rva = (uint64_t)pCurrentFunction - pNtHeader->OptionalHeader.ImageBase;
+            std::string functionName = (char*)(pModuleBase + pdwAddressOfName[i]);
+            
             // Retrieve the syscall code number from the raw bytes
-            auto objectcode = *(uintptr_t*)funcaddr;
+            auto objectcode = *(uintptr_t*)pCurrentFunction;
             auto syscallcode = (objectcode >> 8 * 4) & 0xfff;
-                               
+                                           
             // Print the function's information
             std::cout << std::left
                 << std::setw(10) << std::dec << i
                 << std::setw(10) << std::hex << rva
                 << std::setw(10) << std::hex << syscallcode
-                << funcname << std::endl;   
+                << functionName << std::endl;
+            
         }
     }
 
-    return ERROR_SUCCESS;
+_end:
+    dwStatus = GetLastError();
+    return dwStatus;
 }
 
+
 // Check the first four bytes of the function for operations indicating a syscall
-BOOL is_syscall(LPCVOID pFunction) {
+BOOL IsSyscall(LPCVOID pFunction) {
     LPCBYTE lpBytePtr = (LPCBYTE)pFunction;
 
     if (lpBytePtr[0] == 0x4C &&
