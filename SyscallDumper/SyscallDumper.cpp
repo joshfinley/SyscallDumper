@@ -30,15 +30,12 @@ BOOL IsSyscall(LPCVOID pFunction);
 
 /* Entry Point */
 DWORD main() {
-    DWORD dwStatus;
-
     raii::Hmodule hDll = LoadLibraryExA(
         "C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
     if (!hDll.getHandle() || hDll.getHandle() == INVALID_HANDLE_VALUE)
         return GetLastError();
 
-    PBYTE pModuleBase = reinterpret_cast<PBYTE>(hDll.getHandle());
-
+    auto pModuleBase = reinterpret_cast<PBYTE>(hDll.getHandle());
     auto pDosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(pModuleBase);
     if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         return ERROR_INVALID_EXE_SIGNATURE;
@@ -69,42 +66,40 @@ DWORD main() {
 
     for (uint64_t i = 0; i < pExportDir->NumberOfFunctions; i++) {
         // Get the pointer to the function
-        PVOID pCurrentFunction = reinterpret_cast<PVOID>(
+        auto pCurrentFunction = (PVOID)(
             pModuleBase + pdwAddressOfFunc[pwAddressOfOrd[i]]);
             
         // Identify "Nt" family functions
         if (IsSyscall(pCurrentFunction)) {           
             // Calculate its RVA
-            auto rva = (uint64_t)pCurrentFunction - pNtHeader->OptionalHeader.ImageBase;
-            std::string functionName = (char*)(pModuleBase + pdwAddressOfName[i]);
+            DWORD dwRva = (DWORD)pCurrentFunction - pNtHeader->OptionalHeader.ImageBase;
+            auto szFunctionName = (char*)(pModuleBase + pdwAddressOfName[i]);
             
             // Retrieve the syscall code number from the raw bytes
-            auto objectcode = *(uintptr_t*)pCurrentFunction;
-            auto syscallcode = (objectcode >> 8 * 4) & 0xfff;
+            auto pFunctionCode = *(uintptr_t*)pCurrentFunction;
+            auto syscallNum = (pFunctionCode >> 8 * 4) & 0xfff;
                                            
             // Print the function's information
             std::cout << std::left
                 << std::setw(10) << std::dec << i
-                << std::setw(10) << std::hex << rva
-                << std::setw(10) << std::hex << syscallcode
-                << functionName << std::endl;            
+                << std::setw(10) << std::hex << dwRva
+                << std::setw(10) << std::hex << syscallNum
+                << szFunctionName << std::endl;            
         }
     }
 
-_end:
-    dwStatus = GetLastError();
-    return dwStatus;
+    return ERROR_SUCCESS;
 }
 
 
 // Check the first four bytes of the function for operations indicating a syscall
 BOOL IsSyscall(LPCVOID pFunction) {
-    LPCBYTE lpBytePtr = (LPCBYTE)pFunction;
+    LPCBYTE pBytePtr = (LPCBYTE)pFunction;
 
-    if (lpBytePtr[0] == 0x4C &&
-        lpBytePtr[1] == 0x8B &&
-        lpBytePtr[2] == 0xD1 &&
-        lpBytePtr[3] == 0xB8) return TRUE;
+    if (pBytePtr[0] == 0x4C &&
+        pBytePtr[1] == 0x8B &&
+        pBytePtr[2] == 0xD1 &&
+        pBytePtr[3] == 0xB8) return TRUE;
 
     return FALSE;
 }
