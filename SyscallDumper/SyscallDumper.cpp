@@ -32,10 +32,10 @@ BOOL IsSyscall(LPCVOID pFunction);
 DWORD main() {
     raii::Hmodule hDll = LoadLibraryExA(
         "C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
-    if (!hDll.getHandle() || hDll.getHandle() == INVALID_HANDLE_VALUE)
+    if (!hDll.get() || hDll.get() == INVALID_HANDLE_VALUE)
         return GetLastError();
 
-    auto pModuleBase = reinterpret_cast<PBYTE>(hDll.getHandle());
+    auto pModuleBase = reinterpret_cast<PBYTE>(hDll.get());
     auto pDosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(pModuleBase);
     if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         return ERROR_INVALID_EXE_SIGNATURE;
