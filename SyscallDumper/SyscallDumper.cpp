@@ -28,7 +28,6 @@ namespace fs = std::filesystem;
 /* Function Prototypes */
 BOOL IsSyscall(LPCVOID pFunction);
 
-
 /* Entry Point */
 DWORD main() {
     DWORD dwStatus;
@@ -88,8 +87,7 @@ DWORD main() {
                 << std::setw(10) << std::dec << i
                 << std::setw(10) << std::hex << rva
                 << std::setw(10) << std::hex << syscallcode
-                << functionName << std::endl;
-            
+                << functionName << std::endl;            
         }
     }
 
