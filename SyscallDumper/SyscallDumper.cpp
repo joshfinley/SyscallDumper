@@ -17,18 +17,13 @@
 
 #include <windows.h>
 #include <iostream>
-#include <memory>
 #include <iomanip>
-#include <iostream>
-#include <filesystem>
 #include "raii.hpp"
 
-namespace fs = std::filesystem;
-
-/* Function Prototypes */
+// Function prototypes
 BOOL IsSyscall(LPCVOID pFunction);
 
-/* Entry Point */
+// Entry point
 DWORD main() {
     raii::Hmodule hDll = LoadLibraryExA(
         "C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
