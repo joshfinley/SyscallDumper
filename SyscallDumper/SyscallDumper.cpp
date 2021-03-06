@@ -1,19 +1,20 @@
-/*+===================================================================
-  File:      SyscallDumper.cpp
-  Summary:   Given an ntdll.dll file in the local directory, dump the
-             names and RVAs of all exports
-
-  Origin:    Inspired by information security research dependence on 
-             j00ru's Syscall Tables
-
-// References:
-//  https://resources.infosecinstitute.com/the-export-directory/
-//  http://www.rohitab.com/discuss/topic/40594-parsing-pe-export-table/
-//  https://j00ru.vexillium.org/syscalls/nt/64/
-//  https://www.geoffchappell.com/studies/windows/win32/ntdll/index.htm
-//  https://stackoverflow.com/questions/1128150/win32-api-to-enumerate-dll-export-functions
-
-===================================================================+*/
+/*
+*    File:      SyscallDumper.cpp
+*
+*    Summary:   Given an ntdll.dll file in the local directory, dump the
+*               names and RVAs of all exports
+*
+*    Origin:    Inspired by information security research dependence on 
+*               j00ru's Syscall Tables
+*
+*    References:
+*       https://resources.infosecinstitute.com/the-export-directory/
+*       http://www.rohitab.com/discuss/topic/40594-parsing-pe-export-table/
+*       https://j00ru.vexillium.org/syscalls/nt/64/
+*       https://www.geoffchappell.com/studies/windows/win32/ntdll/index.htm
+*       https://stackoverflow.com/questions/1128150/win32-api-to-enumerate-dll-export-functions
+*
+*/
 
 #include <windows.h>
 #include <iostream>
