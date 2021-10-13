@@ -19,19 +19,18 @@
 #include <windows.h>
 #include <iostream>
 #include <iomanip>
-#include "raii.hpp"
 
 // Function prototypes
 BOOL IsSyscall(LPCVOID pFunction);
 
 // Entry point
 DWORD main() {
-    raii::Hmodule hDll = LoadLibraryExA(
+    HANDLE hDll = LoadLibraryExA(
         "C:\\Windows\\System32\\ntdll.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
-    if (!hDll.get() || hDll.get() == INVALID_HANDLE_VALUE)
+    if (!hDll || hDll == INVALID_HANDLE_VALUE)
         return GetLastError();
 
-    auto pModuleBase = reinterpret_cast<PBYTE>(hDll.get());
+    auto pModuleBase = reinterpret_cast<PBYTE>(hDll);
     auto pDosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(pModuleBase);
     if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
         return ERROR_INVALID_EXE_SIGNATURE;
@@ -73,7 +72,8 @@ DWORD main() {
             
             // Retrieve the syscall code number from the raw bytes
             auto pFunctionCode = *(uintptr_t*)pCurrentFunction;
-            auto syscallNum = (pFunctionCode >> 8 * 4) & 0xfff;
+            auto syscallNum = (pFunctionCode >> 8 * 4);
+            syscallNum = syscallNum & 0xfff;
                                            
             // Print the function's information
             std::cout << std::left
@@ -84,6 +84,10 @@ DWORD main() {
         }
     }
 
+    BOOL bStatus = FreeLibrary((HMODULE)hDll);
+    if (!bStatus) 
+        return GetLastError();
+    
     return ERROR_SUCCESS;
 }
 
