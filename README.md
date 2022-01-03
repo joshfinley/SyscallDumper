@@ -95,21 +95,19 @@ From here, the exports can simply be looped over to:
 - extract the system call number:
 
 ```c++
-// loop over exports
-for (uint64_t i = 0; i < exports->AddressOfFunctions; i++) {
-    // get the pointer to the function
-    PVOID pFuncAddr = reinterpret_cast<PVOID>(
-            reinterpret_cast<LPBYTE>(ntdll) + addr[ord[i]]);
+for (uint64_t i = 0; i < export_dir->NumberOfFunctions; i++) {
+    auto current_function = (PVOID)(
+        ntdll_base + address_of_func[address_of_ord[i]]);
 
-    // identify "Nt" family functions
-    if (isSyscall(pFuncAddr)) {
-        // calculate the function's RVA        
-        auto rva = (uint64_t)funcaddr - ntHeader->OptionalHeader.ImageBase;
+    // skip functions without matching byte signature
+    if (is_syscall(current_function)) {           
+        //  get the function's name
+        DWORD rva = (DWORD)current_function - nt_header->OptionalHeader.ImageBase;
+        auto function_name = (char*)(ntdll_base + address_of_name[i]);
 
-        // retrieve the syscall code number from the address
-        auto objectcode = *(uintptr_t*)funcaddr;
-        auto syscallcode = (objectcode >> 8 * 4) & 0xfff;             
-        }
+        // get the syscall code number from the raw bytes
+        auto function_data = *(uintptr_t*)current_function;
+        auto syscall_num = (function_data >> 8 * 4) & 0xfff;
     }
 }
 ```
