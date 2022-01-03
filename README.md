@@ -57,7 +57,7 @@ For almost any legitimate, day-to-day activities, a programmer will not interact
 
 ## Extracting System Call Numbers From `ntdll.dl`
 
-Extracting the system calls from `ntdll.dll` is more an exercise in manual mapping than anything else. First, `ntdll.dll` is loaded with the `LOAD_LIBRARY_AS_DATAFILE` flag:
+First, `ntdll.dll` is loaded with the `LOAD_LIBRARY_AS_DATAFILE` flag:
 
 ```c++
 // load ntdll
