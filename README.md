@@ -4,6 +4,8 @@ This is an implementation of a simple (less than 100 lines) C++ program which du
 
 ---
 
+## 0. Introduction
+
 `ntdll.dll` is the interface through which user-mode applications access the Windows kernel. `ntdll.dll` exports functions for every fundamental activity requring access to the domain of the kernel. Examples include interacting with the filesystem, virtual memory, physical devices, and more.
 
 These functions are are esentially thin wrappers for passing information to the kernel for execution. With each syscall, `ntddl.dll` sets up the information that the kernel needs, including placing the relevant _number_ of the system call into register `eax`. Following this, control is diverted to the kernel using the `syscall` instruction. A more complete description of this instruction can be found [here](https://www.felixcloutier.com/x86/syscall).
@@ -19,13 +21,10 @@ C:\>dumpbin /exports C:\Windows\System32\ntdll.dll
 Microsoft (R) COFF/PE Dumper Version 14.24.28316.0
 Copyright (C) Microsoft Corporation.  All rights reserved.
 
-
 Dump of file C:\Windows\System32\ntdll.dll
 
 File Type: DLL
-
   Section contains the following exports for ntdll.dll
-
     00000000 characteristics
      C1BB301 time date stamp
         0.00 version
@@ -34,30 +33,16 @@ File Type: DLL
         2380 number of names
 
     ordinal hint RVA      name
-
-          9    0 0000C4D0 A_SHAFinal
-... (truncated)
-       2388  94B 00092220 wcstoul
-          8      0007C8C0 [NONAME]
-
-  Summary
-
-        1000 .00cfg
-        C000 .data
-        4000 .mrdata
-        F000 .pdata
-       47000 .rdata
-        1000 .reloc
-       70000 .rsrc
-      116000 .text
-        1000 RT
+          9    0 00040230 A_SHAFinal
+         10    1 00041060 A_SHAInit
+        ...    (truncated)
 ```
 
-For almost any legitimate, day-to-day activities, a programmer will not interact with `ntdll.dll` directly, but instead will interact with other layers of wrappers around these fundamental system call functions as defined in libraries and subsystem APIs. But for research, malware, and anti-malware purposes, more precise details about the system call numbers are sometimes needed.
+`ntdll.dll` is not intended to be accessed directly, but instead used as defined in other libraries and subsystem APIs (such as `kernel32.dll`). These ordinarily abstract much of the gritty details of system call invocation, but for many reasons they are sometimes even used directly, as in the case in some offensive security tools and malware. 
 
-## Extracting System Call Numbers From `ntdll.dl`
+## 1. Extracting System Call Numbers From `ntdll.dl`
 
-First, `ntdll.dll` is loaded with the `LOAD_LIBRARY_AS_DATAFILE` flag:
+Whatever the reason, it is fairly simple to search through the data of `ntdll.dll` and pick out the system call numbers. To start, a pointer to the DLL data in memory is needed:
 
 ```c++
 // load ntdll
@@ -69,9 +54,9 @@ if (!ntdll) {
 }
 ```
 
-Without the`LOAD_LIBRARY_AS_DATAFILE` flag, `DllMain` would be called upon loading. In this situation, this needs to be avoided, and by using this flag, the library to simply be loaded as raw data.
+You can call LoadLibrary to load `ntdll.dll`, but it is also implicitly loaded in every new process. Additionally the raw unmapped file can just be read from disk into memory without mapping. 
 
-With the raw data of `ntdll.dll` available, it can be parsed for exports:
+With a pointer to the module, it can then be parsed for exports:
 
 ```c++
 // extract the dos header
@@ -91,7 +76,7 @@ auto ord = reinterpret_cast<PWORD>((reinterpret_cast<LPBYTE>(ntdll) + exports->A
 ```
 
 From here, the exports can simply be looped over to:
-- find functions with names matching system calls
+- find functions matching system calls
 - extract the system call number:
 
 ```c++
@@ -126,3 +111,20 @@ ordinal   RVA       code      name
 654       9c7a0     3a        NtWriteVirtualMemory
 655       9c920     46        NtYieldExecution
 ```
+
+## 2. Conclusion
+
+The output of the binary generated from this project's source does just this. Going through the output of system call numbers and their names reveals a lot of information about what the Windows operating system makes available to the user. In addition to offering facilities for opening files, working with memory, and executing code, there are syscalls for querying the boot order, obtaining power information, enumerating drivers, writing text to the screen (before GUI load) and even running a virtual DOS environment. Many of these utilities are either poorly documented or completely undocumented. Digging in and reverse engineering undocumented system calls to understand their purpose and particularities is an underexplored opportunity for community contributions to the public knowledge of the Windows operating system. With that being said, I hope this writeup was useful to the reader.
+
+---
+
+For future work, some provocative security related questions might include:
+
+- What syscalls allow a user to open handles without common and potentially monitored means?
+- Do any system calls allow a user (privileged or otherwise) to disrupt the availability of the system or proccesses and services that are considered ordinarily inaccessible from that context?
+- Do any system calls offer alternative means of data or execution persistence?
+- What vulnerabilities exist in undocumented and poorly documented system call handlers (defined in the kernel)?
+
+## References
+- ['Hello World' from boot screen](https://munin.uit.no/bitstream/handle/10037/7810/thesis.pdf?sequence=2)
+- [J00ru's System Call Tables](https://j00ru.vexillium.org/syscalls/nt/64/)
