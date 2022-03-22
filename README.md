@@ -38,7 +38,7 @@ File Type: DLL
         ...    (truncated)
 ```
 
-`ntdll.dll` is not intended to be accessed directly, but instead used as defined in other libraries and subsystem APIs (such as `kernel32.dll`). These ordinarily abstract much of the gritty details of system call invocation, but for many reasons they are sometimes even used directly, as in the case in some offensive security tools and malware. 
+`ntdll.dll` is not intended to be accessed directly, but instead used as defined in other libraries and subsystem APIs (such as `kernel32.dll`). These ordinarily abstract much of the gritty details of system call invocation, but for many reasons direct system calls are sometimes even used directly, as in the case in some offensive security tools and malware. 
 
 ## 1. Extracting System Call Numbers From `ntdll.dl`
 
