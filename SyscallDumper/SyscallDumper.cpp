@@ -95,7 +95,6 @@ boolean is_syscall(LPCVOID function_ptr) {
     if (byte_ptr[0] == 0x4C &&
         byte_ptr[1] == 0x8B &&
         byte_ptr[2] == 0xD1 &&
-
         byte_ptr[3] == 0xB8) return true;
 
     return false;
