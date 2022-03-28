@@ -80,6 +80,19 @@ From here, the exports can simply be looped over to:
 - extract the system call number:
 
 ```c++
+// Check the byte signature of the target for a system call wrapper match
+boolean is_syscall(LPCVOID function_ptr) {
+    unsigned char* byte_ptr = (unsigned char*)function_ptr;
+
+    if (byte_ptr[0] == 0x4C &&
+        byte_ptr[1] == 0x8B &&
+        byte_ptr[2] == 0xD1 &&
+
+        byte_ptr[3] == 0xB8) return true;
+
+    return false;
+}
+
 for (uint64_t i = 0; i < export_dir->NumberOfFunctions; i++) {
     auto current_function = (PVOID)(
         ntdll_base + address_of_func[address_of_ord[i]]);
