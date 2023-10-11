@@ -78,6 +78,14 @@ void print_syscall_info(const uint8_t* ntdll_base, const IMAGE_EXPORT_DIRECTORY*
             std::uint32_t rva = static_cast<std::uint32_t>(reinterpret_cast<const uint8_t*>(current_function) - ntdll_base);
             auto function_name = reinterpret_cast<const char*>(ntdll_base + address_of_name[i]);
 
+            // Use std::string for safer string operations
+            std::string function_name_str(function_name);
+
+            // Skip functions that start with "Zw"
+            if (function_name_str.substr(0, 2) != "Nt") {
+                continue;
+            }
+
             auto function_data = *reinterpret_cast<const std::uintptr_t*>(current_function);
             auto syscall_num = (function_data >> (8 * 4)) & 0xfff;
 
