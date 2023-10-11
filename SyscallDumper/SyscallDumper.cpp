@@ -81,7 +81,7 @@ void print_syscall_info(const uint8_t* ntdll_base, const IMAGE_EXPORT_DIRECTORY*
             // Use std::string for safer string operations
             std::string function_name_str(function_name);
 
-            // Skip functions that start with "Zw"
+            // Skip functions that dont start with "Nt"
             if (function_name_str.substr(0, 2) != "Nt") {
                 continue;
             }
