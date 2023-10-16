@@ -11,7 +11,7 @@ using OptByte = std::optional<uint8_t>;
 
 bool match_pattern(const std::vector<uint8_t>& data, const std::vector<OptByte>& pattern, size_t start_offset = 0) {
     if (pattern.empty() || data.size() < pattern.size() + start_offset) {
-        return -1;
+        return false;
     }
 
     for (size_t i = start_offset; i <= data.size() - pattern.size(); ++i) {
